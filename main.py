@@ -51,22 +51,22 @@ class Cell:
         return self.__isCenter
 
     def addPawn(self, color):
-        if self.__isCorner:
-            if len(self.__pawns) == 0:
-                self.__pawns.append(Pawn(self.__x * 50 + 45, self.__y * 50 + 45, color, self.__tk, self.__canvas))
+        self.__color = color
+        if len(self.__pawns) == 0:
+            self.__pawns.append(Pawn(self.__x * 50 + 45, self.__y * 50 + 45, color, self.__tk, self.__canvas))
+            return
+
         if self.__isEdge:
-            if len(self.__pawns) == 0:
+            if len(self.__pawns) == 1:
+                # Only in edge cells with 2 pawns, we need to remove the center pawn and add 2 new pawns in corners of the cells
+                self.removePawn()
                 self.__pawns.append(Pawn(self.__x * 50 + 58, self.__y * 50 + 58, color, self.__tk, self.__canvas))
-            elif len(self.__pawns) == 1:
                 self.__pawns.append(Pawn(self.__x * 50 + 30, self.__y * 50 + 30, color, self.__tk, self.__canvas))
         if self.__isCenter:
-            if len(self.__pawns) == 0:
+            if len(self.__pawns) == 1:
                 self.__pawns.append(Pawn(self.__x * 50 + 30, self.__y * 50 + 30, color, self.__tk, self.__canvas))
-            elif len(self.__pawns) == 1:
-                self.__pawns.append(Pawn(self.__x * 50 + 45, self.__y * 50 + 45, color, self.__tk, self.__canvas))
             elif len(self.__pawns) == 2:
                 self.__pawns.append(Pawn(self.__x * 50 + 58, self.__y * 50 + 58, color, self.__tk, self.__canvas))
-        self.__color = color
 
     def getPawns(self):
         return self.__pawns
@@ -162,26 +162,23 @@ class Board:
         colorsDeleted = set()
 
         def applyChainReaction(self, cell):
-            if (cell.isCorner() and len(cell.getPawns()) == 1) or (cell.isEdge() and len(cell.getPawns()) == 2) or (
-                    cell.isCenter() and len(cell.getPawns()) == 3):
+            if (cell.isCorner() and len(cell.getPawns()) == 1) or \
+                    (cell.isEdge() and len(cell.getPawns()) == 2) or \
+                    (cell.isCenter() and len(cell.getPawns()) == 3):
                 cell.resetPawns()
                 for cellAround in self.getCellsAround(cell.getX(), cell.getY()):
                     for pawn in cellAround.getPawns():
                         if pawn.getColor() != cell.getColor():
                             colorsDeleted.add(pawn.getColor())
-                        pawn.setColor(self.__colors[self.__playerTurn])
+                        pawn.setColor(self.__players[self.__playerTurn])
                     applyChainReaction(self, cellAround)
             else:
-                cell.addPawn(self.__colors[self.__playerTurn])
+                cell.addPawn(self.__players[self.__playerTurn])
 
         cell = self.getCellByCoordinates(x, y)
-        if cell.getColor() is not None and cell.getColor() != self.__colors[self.__playerTurn]:
+        if cell.getColor() is not None and cell.getColor() != self.__players[self.__playerTurn]:
             return
         applyChainReaction(self, cell)
-
-        # Update the player turn to the next color, if the color is a looser, skip it
-
-        self.__playerTurn = (self.__playerTurn + 1) % len(self.__players)
 
         for color in colorsDeleted:
             if self.checkIfLooser(color):
@@ -190,7 +187,9 @@ class Board:
         if self.checkVictory():
             messagebox.showinfo("Victory", "The winner is " + self.__players[0])
             self.__root.destroy()
+            return
 
+        self.__playerTurn = (self.__playerTurn + 1) % len(self.__players)
 
     def checkIfLooser(self, color):
         for cell in self.__gridCells:
@@ -208,4 +207,5 @@ class Board:
 
 
 if __name__ == "__main__":
-    board = Board(4, 7)
+    board = Board(6, 11)
+    # board = Board(4, 7)
