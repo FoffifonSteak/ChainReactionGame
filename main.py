@@ -2,6 +2,7 @@ from tkinter import *
 from tkinter import messagebox
 import winsound
 
+
 class Pawn:
     def __init__(self, x, y, color, tk, canvas):
         self.__x = x
@@ -129,7 +130,8 @@ class Board:
         self.__columnsEntry = Entry(self.__root, justify="center")
         self.__columnsEntry.pack()
 
-        self.__howManyPlayers = Label(self.__root, text="veuillez renseigner le nombre de joueurs", bg="black", fg="white")
+        self.__howManyPlayers = Label(self.__root, text="veuillez renseigner le nombre de joueurs", bg="black",
+                                      fg="white")
         self.__howManyPlayers.pack(padx=10, pady=10)
         self.__howManyPlayersEntry = Entry(self.__root, justify="center")
         self.__howManyPlayersEntry.pack()
@@ -159,7 +161,7 @@ class Board:
             self.__players.append(self.__colors[i])
 
         self.__canvas = Canvas(width=self.__n * self.__cellSize + 50, height=self.__m * self.__cellSize + 50,
-                                   bg="black", bd=0, highlightthickness=0)
+                               bg="black", bd=0, highlightthickness=0)
         self.__canvas.pack()
 
         self.__rows.destroy()
@@ -180,11 +182,13 @@ class Board:
             for j in range(self.__n):
                 self.__rects.append(self.__canvas.create_rectangle(self.__cellSize * j + 25, self.__cellSize * i + 25,
                                                                    25 + self.__cellSize + j * self.__cellSize,
-                                                                   25 + self.__cellSize + i * self.__cellSize, fill="black",
+                                                                   25 + self.__cellSize + i * self.__cellSize,
+                                                                   fill="black",
                                                                    outline=self.__colors[0]))
                 self.__canvas.tag_bind(self.__rects[-1], "<Button-1>", lambda event, x=j, y=i: self.play(x, y))
                 self.__gridCells.append(Cell(j, i, self.__root, self.__canvas, (i, j) in self.getCorners(),
                                              (j, i) in flatten(self.getEdges()), (j, i) in self.getCenterCells()))
+
     def getCorners(self):
         return (0, 0), (self.__m - 1, 0), (0, self.__n - 1), (self.__m - 1, self.__n - 1)
 
@@ -229,14 +233,14 @@ class Board:
                 self.__players.remove(color)
 
         if self.checkVictory():
-            newGame = messagebox.askyesno("Victory", "The winner is " + self.__players[0] + ". Do you want to play again?")
+            newGame = messagebox.askyesno("Victory",
+                                          "The winner is " + self.__players[0] + ". Do you want to play again?")
             if not newGame:
                 self.__root.destroy()
                 return
             self.__canvas.destroy()
             self.__init()
             return
-
 
         self.__playerTurn = (self.__playerTurn + 1) % len(self.__players)
         for rect in self.__rects:
@@ -258,5 +262,4 @@ class Board:
 
 
 if __name__ == "__main__":
-    board = Board(6, 11)
-    # board = Board(4, 7)
+    board = Board()
