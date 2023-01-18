@@ -111,26 +111,34 @@ class Board:
         self.__root.config(bg="black")
         self.__canvas = Canvas(width=self.__n * self.__cellSize + 50, height=self.__m * self.__cellSize + 50,
                                bg="black", bd=0, highlightthickness=0)
-        self.__players = []
         self.__canvas.pack()
-        self.__gridCells = []
-        self._howManyPlayers = 2
-        self.__colors = ["green", "red", "blue", "yellow", "orange", "purple", "pink", "brown"]
-        self.__playerTurn = 0
+        self.__init()
+        self.__root.mainloop()
 
-        for i in range(self._howManyPlayers):
+    def __init(self):
+        self.__players = []
+        self.__gridCells = []
+        self.__colors = ["green", "red", "blue", "yellow", "purple", "orange red", "brown", "cyan"]
+        self.__howManyPlayers = 2
+        self.__playerTurn = 0
+        self.__rects = []
+
+        for i in range(self.__howManyPlayers):
             self.__players.append(self.__colors[i])
 
-        for i in range(m):
-            for j in range(n):
-                rect = self.__canvas.create_rectangle(self.__cellSize * j + 25, self.__cellSize * i + 25,
-                                                      25 + self.__cellSize + j * self.__cellSize,
-                                                      25 + self.__cellSize + i * self.__cellSize, fill="black",
-                                                      outline="white")
-                self.__canvas.tag_bind(rect, "<Button-1>", lambda event, x=j, y=i: self.play(x, y))
+        # In case of a new started game, if it's the first, the iteration on a empty list will not be executed
+        for cell in self.__gridCells:
+            cell.resetPawns()
+
+        for i in range(self.__m):
+            for j in range(self.__n):
+                self.__rects.append(self.__canvas.create_rectangle(self.__cellSize * j + 25, self.__cellSize * i + 25,
+                                                                   25 + self.__cellSize + j * self.__cellSize,
+                                                                   25 + self.__cellSize + i * self.__cellSize, fill="black",
+                                                                   outline=self.__colors[0]))
+                self.__canvas.tag_bind(self.__rects[-1], "<Button-1>", lambda event, x=j, y=i: self.play(x, y))
                 self.__gridCells.append(Cell(j, i, self.__root, self.__canvas, (i, j) in self.getCorners(),
                                              (j, i) in flatten(self.getEdges()), (j, i) in self.getCenterCells()))
-        self.__root.mainloop()
 
     def getCorners(self):
         return (0, 0), (self.__m - 1, 0), (0, self.__n - 1), (self.__m - 1, self.__n - 1)
@@ -148,15 +156,6 @@ class Board:
             if cell.getCoordinates() in [(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)]:
                 cells.append(cell)
         return cells
-
-    def isChaining(self, cell):
-        if cell.isCorner() and len(cell.getPawns()) == 1:
-            return True
-        elif cell.isEdge() and len(cell.getPawns()) == 2:
-            return True
-        elif cell.isCenter() and len(cell.getPawns()) == 3:
-            return True
-        return False
 
     def play(self, x, y):
         colorsDeleted = set()
@@ -181,17 +180,23 @@ class Board:
         applyChainReaction(self, cell)
 
         for color in colorsDeleted:
-            if self.checkIfLooser(color):
+            if self.isLooser(color):
                 self.__players.remove(color)
 
         if self.checkVictory():
-            messagebox.showinfo("Victory", "The winner is " + self.__players[0])
-            self.__root.destroy()
+            newGame = messagebox.askyesno("Victory", "The winner is " + self.__players[0] + ". Do you want to play again?")
+            if not newGame:
+                self.__root.destroy()
+                return
+            self.__init()
             return
 
-        self.__playerTurn = (self.__playerTurn + 1) % len(self.__players)
 
-    def checkIfLooser(self, color):
+        self.__playerTurn = (self.__playerTurn + 1) % len(self.__players)
+        for rect in self.__rects:
+            self.__canvas.itemconfig(rect, outline=self.__players[self.__playerTurn])
+
+    def isLooser(self, color):
         for cell in self.__gridCells:
             if cell.getColor() == color:
                 return False
