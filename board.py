@@ -1,9 +1,11 @@
+from random import randint
 from tkinter import *
 from tkinter.messagebox import showinfo, askyesno
 
 import winsound
 
 from cell import Cell
+
 
 class Board:
     def __init__(self):
@@ -20,9 +22,9 @@ class Board:
         self.__players = []
         self.__gridCells = []
         self.__colors = ["green", "red", "blue", "yellow", "purple", "orange red", "brown", "cyan"]
-        self.__howManyPlayers = 2
         self.__playerTurn = 0
         self.__rects = []
+        self.__botChecked = False
 
         self.__rows = Label(self.__root, text="veuillez renseigner hauteur", bg="black", fg="white")
         self.__rows.pack(padx=10, pady=10)
@@ -38,13 +40,21 @@ class Board:
         self.__howManyPlayers.pack(padx=10, pady=10)
         self.__howManyPlayersEntry = Entry(self.__root, justify="center")
         self.__howManyPlayersEntry.pack()
-        self.__button = Button(self.__root, text="Valider", command=self.createBoard)
+        self.__bot = Checkbutton(self.__root, text="Jouer contre l'ordinateur", command=self.__checkBot)
+        self.__bot.pack(padx=10, pady=10)
+        self.__button = Button(self.__root, text="Valider", command=self.__createBoard)
         self.__button.pack(padx=10, pady=10)
 
-    def createBoard(self):
+    def __checkBot(self):
+        self.__botChecked = True
+
+    def __createBoard(self):
         self.__n = int(self.__rowsEntry.get())
         self.__m = int(self.__columnsEntry.get())
-        self.__numberOfPlayers = int(self.__howManyPlayersEntry.get())
+        if self.__botChecked:
+            self.__numberOfPlayers = 2
+        else:
+            self.__numberOfPlayers = int(self.__howManyPlayersEntry.get())
 
         if self.__n < 3 or self.__n > 10:
             showinfo("Erreur", "Le nombre de lignes doit être compris entre 3 et 10.")
@@ -74,8 +84,13 @@ class Board:
         self.__howManyPlayers.destroy()
         self.__howManyPlayersEntry.destroy()
         self.__button.destroy()
+        self.__bot.destroy()
 
         self.__canvas.config(width=self.__n * self.__cellSize + 50, height=self.__m * self.__cellSize + 50)
+        self.__score = Label(self.__root, text="Score", bg="black", fg="white")
+        self.__score.pack(padx=10, pady=10)
+        for color in self.__players:
+            self.__score["text"] += f"\n{color} : 0"
 
         # In case of a new started game, if it's the first, the iteration on a empty list will not be executed
         for cell in self.__gridCells:
@@ -88,7 +103,7 @@ class Board:
                                                                    25 + self.__cellSize + i * self.__cellSize,
                                                                    fill="black",
                                                                    outline=self.__colors[0]))
-                self.__canvas.tag_bind(self.__rects[-1], "<Button-1>", lambda event, x=j, y=i: self.play(x, y))
+                self.__canvas.tag_bind(self.__rects[-1], "<Button-1>", lambda event, x=j, y=i: self.__play(x, y))
                 self.__gridCells.append(Cell(j, i, self.__root, self.__canvas, (i, j) in self.getCorners(),
                                              (j, i) in flatten(self.getEdges()), (j, i) in self.getCenterCells()))
 
@@ -109,7 +124,7 @@ class Board:
                 cells.append(cell)
         return cells
 
-    def play(self, x, y):
+    def __play(self, x, y, bot=False):
         colorsDeleted = set()
 
         def applyChainReaction(self, cell):
@@ -131,23 +146,50 @@ class Board:
             return
         applyChainReaction(self, cell)
 
+        # Update score label that display the number of pawns of each player
+        self.__score.destroy()
+        self.__score = Label(self.__root, text="Score", bg="black", fg="white")
+        self.__score.pack(padx=10, pady=10)
+        for color in self.__players:
+            self.__score["text"] += f"\n{color} : {len(self.__getPawnsByColor(color))}"
+
         for color in colorsDeleted:
             if self.isLooser(color):
                 self.__players.remove(color)
 
         if self.checkVictory():
-            newGame = askyesno("Victory",
-                                          "The winner is " + self.__players[0] + ". Do you want to play again?")
+            newGame = askyesno("Victory", "The winner is " + self.__players[0] + ". Do you want to play again?")
             if not newGame:
                 self.__root.destroy()
                 return
             self.__canvas.destroy()
+            self.__score.destroy()
             self.__init()
             return
 
         self.__playerTurn = (self.__playerTurn + 1) % len(self.__players)
         for rect in self.__rects:
             self.__canvas.itemconfig(rect, outline=self.__players[self.__playerTurn])
+
+        if self.__botChecked and not bot:
+            self.__botPlay()
+
+    def __botPlay(self):
+        x, y = None, None
+        while (x is None or y is None) or (
+                self.getCellByCoordinates(x, y).getColor() is not None and self.getCellByCoordinates(x, y).getColor() !=
+                self.__players[self.__playerTurn]):
+            x = randint(0, self.__n - 1)
+            y = randint(0, self.__m - 1)
+        self.__play(x, y, True)
+
+    def __getPawnsByColor(self, color):
+        pawns = []
+        for cell in self.__gridCells:
+            for pawn in cell.getPawns():
+                if pawn.getColor() == color:
+                    pawns.append(pawn)
+        return pawns
 
     def isLooser(self, color):
         for cell in self.__gridCells:
