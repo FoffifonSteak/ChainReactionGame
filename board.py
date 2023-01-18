@@ -26,23 +26,23 @@ class Board:
         self.__rects = []
         self.__botChecked = False
 
-        self.__rows = Label(self.__root, text="veuillez renseigner hauteur", bg="black", fg="white")
+        self.__rows = Label(self.__root, text="please fill in height", bg="black", fg="white")
         self.__rows.pack(padx=10, pady=10)
         self.__rowsEntry = Entry(self.__root, justify="center")
         self.__rowsEntry.pack()
-        self.__columns = Label(self.__root, text="veuillez renseigner largeur", bg="black", fg="white")
+        self.__columns = Label(self.__root, text="please fill in width", bg="black", fg="white")
         self.__columns.pack(padx=10, pady=10)
         self.__columnsEntry = Entry(self.__root, justify="center")
         self.__columnsEntry.pack()
 
-        self.__howManyPlayers = Label(self.__root, text="veuillez renseigner le nombre de joueurs", bg="black",
+        self.__howManyPlayers = Label(self.__root, text="please enter the number of players", bg="black",
                                       fg="white")
         self.__howManyPlayers.pack(padx=10, pady=10)
         self.__howManyPlayersEntry = Entry(self.__root, justify="center")
         self.__howManyPlayersEntry.pack()
-        self.__bot = Checkbutton(self.__root, text="Jouer contre l'ordinateur", command=self.__checkBot)
+        self.__bot = Checkbutton(self.__root, text="Playing against the computer", command=self.__checkBot)
         self.__bot.pack(padx=10, pady=10)
-        self.__button = Button(self.__root, text="Valider", command=self.__createBoard)
+        self.__button = Button(self.__root, text="Validate", command=self.__createBoard)
         self.__button.pack(padx=10, pady=10)
 
     def __checkBot(self):
@@ -57,15 +57,15 @@ class Board:
             self.__numberOfPlayers = int(self.__howManyPlayersEntry.get())
 
         if self.__n < 3 or self.__n > 10:
-            showinfo("Erreur", "Le nombre de lignes doit être compris entre 3 et 10.")
+            showinfo("Error", "The number of lines must be between 3 and 10.")
             return
 
         if self.__m < 3 or self.__m > 12:
-            showinfo("Erreur", "Le nombre de colonnes doit être compris entre 3 et 12.")
+            showinfo("Error", "The number of columns must be between 3 and 12.")
             return
 
         if self.__numberOfPlayers < 2 or self.__numberOfPlayers > 8:
-            showinfo("Erreur", "Le nombre de joueurs doit être compris entre 2 et 8.")
+            showinfo("Error", "The number of players must be between 2 and 8.")
             return
 
         winsound.PlaySound("sonGong.wav", winsound.SND_ASYNC)
