@@ -1,35 +1,89 @@
 from tkinter import *
+from tkinter import messagebox
+import winsound
 
 
 class Board:
-    def __init__(self, n, m):
-        self.__n = n
-        self.__m = m
+    def __init__(self):
         self.__cellSize = 50
         self.__root = Tk()
         self.__root.resizable(False, False)
         self.__root.title("Chain Reaction")
         self.__root.config(bg="black")
-        self.__canvas = Canvas(width=self.__n * self.__cellSize + 50, height=self.__m * self.__cellSize + 50, bg="black", bd=0, highlightthickness=0)
-        self.__canvas.pack()
+
+        self.__rows = Label(self.__root, text="veuillez renseigner hauteur", bg="black", fg="white")
+        self.__rows.pack(padx=10, pady=10)
+        self.__rowsEntry = Entry(self.__root, justify="center")
+        self.__rowsEntry.pack()
+        self.__columns = Label(self.__root, text="veuillez renseigner largeur", bg="black", fg="white")
+        self.__columns.pack(padx=10, pady=10)
+        self.__columnsEntry = Entry(self.__root, justify="center")
+        self.__columnsEntry.pack()
+
+        self.__howManyPlayers = Label(self.__root, text="veuillez renseigner le nombre de joueurs", bg="black", fg="white")
+        self.__howManyPlayers.pack(padx=10, pady=10)
+        self.__howManyPlayersEntry = Entry(self.__root, justify="center")
+        self.__howManyPlayersEntry.pack()
+        self.__button = Button(self.__root, text="Valider", command=self.createBoard)
+        self.__button.pack(padx=10, pady=10)
+
         self.__gridCells = []
-        self._howManyPlayers = 2
         self.__colors = ["green", "red", "blue", "yellow", "orange", "purple", "pink", "brown"]
         self.__playerTurn = 0
+        self.__root.mainloop()
 
-        for i in range(m):
-            for j in range(n):
-                rect = self.__canvas.create_rectangle(self.__cellSize * j + 25, self.__cellSize * i + 25, 25 + self.__cellSize + j * self.__cellSize, 25 + self.__cellSize + i * self.__cellSize, fill="black", outline="white")
-                self.__canvas.tag_bind(rect, "<Button-1>", lambda event, i=j, j=i: self.game(i, j))
+    def createBoard(self):
+        self.__n = int(self.__rowsEntry.get())
+        self.__m = int(self.__columnsEntry.get())
+        self.__NumberOfPlayers = int(self.__howManyPlayersEntry.get())
+
+        if self.__n < 3 or self.__n > 10:
+            messagebox.showinfo("Erreur", "Le nombre de lignes doit être compris entre 3 et 10.")
+            return
+
+        if self.__m < 3 or self.__m > 12:
+            messagebox.showinfo("Erreur", "Le nombre de colonnes doit être compris entre 3 et 12.")
+            return
+
+        if self.__NumberOfPlayers < 2 or self.__NumberOfPlayers > 8:
+            messagebox.showinfo("Erreur", "Le nombre de joueurs doit être compris entre 2 et 8.")
+            return
+
+        winsound.PlaySound("sonGong.wav", winsound.SND_ASYNC)
+
+        self.__canvas = Canvas(width=self.__n * self.__cellSize + 50, height=self.__m * self.__cellSize + 50,
+                               bg="black", bd=0, highlightthickness=0)
+        self.__canvas.pack()
+
+        self.__rows.destroy()
+        self.__rowsEntry.destroy()
+        self.__columns.destroy()
+        self.__columnsEntry.destroy()
+        self.__howManyPlayers.destroy()
+        self.__howManyPlayersEntry.destroy()
+        self.__button.destroy()
+
+        self.__canvas.config(width=self.__n * self.__cellSize + 50, height=self.__m * self.__cellSize + 50)
+
+        for i in range(self.__m):
+            for j in range(self.__n):
+                self.__rect = self.__canvas.create_rectangle(self.__cellSize * j + 25, self.__cellSize * i + 25,
+                                                             25 + self.__cellSize + j * self.__cellSize,
+                                                             25 + self.__cellSize + i * self.__cellSize, fill="black",
+                                                             outline=self.__colors[self.__playerTurn], width=2)
+
+
+                self.__canvas.tag_bind(self.__rect, "<Button-1>", lambda event, i=j, j=i: self.game(i, j))
                 self.__gridCells.append(Cell(j, i, self.__root, self.__canvas, (i, j) in self.getCorners(),
                                              (j, i) in flatten(self.getEdges()), (j, i) in self.getCenterCells()))
-        self.__root.mainloop()
+
+
 
     def getCorners(self):
         return (0, 0), (self.__m - 1, 0), (0, self.__n - 1), (self.__m - 1, self.__n - 1)
 
     def getEdges(self):
-        return [(i, 0) for i in range(1, self.__n - 1)], [(i, self.__m - 1) for i in range(1, self.__n - 1)], [(0, i) for i in range(1, self.__m - 1)], [(self.__n - 1, i) for i in range(1, self.__m - 1)]
+        return [(i, 0) for i in range(1, self.__n - 1)], [(i, self.__m - 1) for i in range(1, self.__n - 1)], [(0, i)for i in range(1,self.__m - 1)], [(self.__n - 1, i) for i in range(1, self.__m - 1)]
 
     def getCenterCells(self):
         return [(i, j) for i in range(1, self.__n - 1) for j in range(1, self.__m - 1)]
@@ -37,6 +91,7 @@ class Board:
     def game(self, i, j):
         def removeSelf():
             self.getCellByCoordinates(i, j).removePawn()
+
         def setPlayerPawn(i2, j2):
             cell = self.getCellByCoordinates(i2, j2)
             if cell is None:
@@ -44,10 +99,12 @@ class Board:
             if cell.getColor() != None and cell.getColor() != self.__colors[self.__playerTurn]:
                 return
             cell.addPawn(self.__colors[self.__playerTurn])
-            self.__playerTurn = (self.__playerTurn + 1) % self._howManyPlayers
+            self.__playerTurn = (self.__playerTurn + 1) % self.__NumberOfPlayers
+            # for rect in self.__canvas.find_withtag("current"):
+            #     self.__canvas.itemconfig(rect, outline=self.__colors[self.__playerTurn])
 
         if (j, i) in self.getCorners():
-            if len(self.getCellByCoordinates(i, j).getPawns()) > 2:
+            if len(self.getCellByCoordinates(i, j).getPawns()) == 1:
                 if i == 0 and j == 0:
                     setPlayerPawn(i, j + 1)
                     setPlayerPawn(i + 1, j)
@@ -67,7 +124,7 @@ class Board:
             else:
                 setPlayerPawn(i, j)
         elif (i, j) in flatten(self.getEdges()):
-            if len(self.getCellByCoordinates(i, j).getPawns()) > 3:
+            if len(self.getCellByCoordinates(i, j).getPawns()) == 3:
                 if j == 0:
                     setPlayerPawn(i, j + 1)
                     setPlayerPawn(i - 1, j)
@@ -91,7 +148,7 @@ class Board:
             else:
                 setPlayerPawn(i, j)
         elif (i, j) in self.getCenterCells():
-            if len(self.getCellByCoordinates(i, j).getPawns()) > 4:
+            if len(self.getCellByCoordinates(i, j).getPawns()) == 4:
                 setPlayerPawn(i, j - 1)
                 setPlayerPawn(i, j + 1)
                 setPlayerPawn(i - 1, j)
@@ -139,22 +196,24 @@ class Cell:
         self.__color = None
 
     def addPawn(self, color):
+        winsound.PlaySound("pawn.wav", winsound.SND_FILENAME)
         if self.__isCorner:
             if len(self.__pawns) == 0:
-                self.__pawns.append(Pawn(self.__x*50+45, self.__y*50+45, color, self.__tk, self.__canvas))
+                self.__pawns.append(Pawn(self.__x * 50 + 45, self.__y * 50 + 45, color, self.__tk, self.__canvas))
         if self.__isEdge:
             if len(self.__pawns) == 0:
-                self.__pawns.append(Pawn(self.__x*50+58, self.__y*50+58, color, self.__tk, self.__canvas))
+                self.__pawns.append(Pawn(self.__x * 50 + 58, self.__y * 50 + 58, color, self.__tk, self.__canvas))
             elif len(self.__pawns) == 1:
-                self.__pawns.append(Pawn(self.__x*50+30, self.__y*50+30, color, self.__tk, self.__canvas))
+                self.__pawns.append(Pawn(self.__x * 50 + 30, self.__y * 50 + 30, color, self.__tk, self.__canvas))
         if self.__isCenter:
             if len(self.__pawns) == 0:
-                self.__pawns.append(Pawn(self.__x*50+30, self.__y*50+30, color, self.__tk, self.__canvas))
+                self.__pawns.append(Pawn(self.__x * 50 + 30, self.__y * 50 + 30, color, self.__tk, self.__canvas))
             elif len(self.__pawns) == 1:
-                self.__pawns.append(Pawn(self.__x*50+45, self.__y*50+45, color, self.__tk, self.__canvas))
+                self.__pawns.append(Pawn(self.__x * 50 + 45, self.__y * 50 + 45, color, self.__tk, self.__canvas))
             elif len(self.__pawns) == 2:
-                self.__pawns.append(Pawn(self.__x*50+58, self.__y*50+58, color, self.__tk, self.__canvas))
+                self.__pawns.append(Pawn(self.__x * 50 + 58, self.__y * 50 + 58, color, self.__tk, self.__canvas))
         self.__color = color
+
     def getPawns(self):
         return self.__pawns
 
@@ -178,5 +237,6 @@ class Cell:
 def flatten(l):
     return [item for sublist in l for item in sublist]
 
+
 if __name__ == "__main__":
-    board = Board(4, 7)
+    Board()
