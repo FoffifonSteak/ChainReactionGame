@@ -1,3 +1,4 @@
+from random import randint
 from tkinter import *
 from tkinter.messagebox import showinfo, askyesno
 
@@ -23,6 +24,7 @@ class Board:
         self.__howManyPlayers = 2
         self.__playerTurn = 0
         self.__rects = []
+        self.__botChecked = False
 
         self.__rows = Label(self.__root, text="veuillez renseigner hauteur", bg="black", fg="white")
         self.__rows.pack(padx=10, pady=10)
@@ -38,13 +40,18 @@ class Board:
         self.__howManyPlayers.pack(padx=10, pady=10)
         self.__howManyPlayersEntry = Entry(self.__root, justify="center")
         self.__howManyPlayersEntry.pack()
+        self.__bot = Checkbutton(self.__root, text="Jouer contre l'ordinateur", command=self.botChecked)
+        self.__bot.pack(padx=10, pady=10)
         self.__button = Button(self.__root, text="Valider", command=self.createBoard)
         self.__button.pack(padx=10, pady=10)
 
     def createBoard(self):
         self.__n = int(self.__rowsEntry.get())
         self.__m = int(self.__columnsEntry.get())
-        self.__numberOfPlayers = int(self.__howManyPlayersEntry.get())
+        if self.__botChecked:
+            self.__numberOfPlayers = 2
+        else:
+            self.__numberOfPlayers = int(self.__howManyPlayersEntry.get())
 
         if self.__n < 3 or self.__n > 10:
             showinfo("Erreur", "Le nombre de lignes doit être compris entre 3 et 10.")
@@ -74,6 +81,7 @@ class Board:
         self.__howManyPlayers.destroy()
         self.__howManyPlayersEntry.destroy()
         self.__button.destroy()
+        self.__bot.destroy()
 
         self.__canvas.config(width=self.__n * self.__cellSize + 50, height=self.__m * self.__cellSize + 50)
 
@@ -109,7 +117,10 @@ class Board:
                 cells.append(cell)
         return cells
 
-    def play(self, x, y):
+    def botChecked(self):
+        self.__botChecked = True
+
+    def play(self, x, y, bot=False):
         colorsDeleted = set()
 
         def applyChainReaction(self, cell):
@@ -144,10 +155,20 @@ class Board:
             self.__canvas.destroy()
             self.__init()
             return
-
         self.__playerTurn = (self.__playerTurn + 1) % len(self.__players)
+
         for rect in self.__rects:
             self.__canvas.itemconfig(rect, outline=self.__players[self.__playerTurn])
+
+        if self.__botChecked and not bot:
+            self.botPlay()
+    def botPlay(self):
+        x, y = None, None
+        while (x is None or y is None) or (self.getCellByCoordinates(x, y).getColor() is not None and self.getCellByCoordinates(x, y).getColor() != self.__players[self.__playerTurn]):
+            x = randint(0, self.__n - 1)
+            y = randint(0, self.__m - 1)
+        self.play(x, y, True)
+
 
     def isLooser(self, color):
         for cell in self.__gridCells:
