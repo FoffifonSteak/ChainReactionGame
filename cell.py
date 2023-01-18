@@ -14,7 +14,6 @@ class Cell:
         self.__isCorner = isCorner
         self.__isEdge = isEdge
         self.__isCenter = isCenter
-        self.__color = None
 
     def isCorner(self):
         return self.__isCorner
@@ -27,7 +26,6 @@ class Cell:
 
     def addPawn(self, color):
         winsound.PlaySound("pawn.wav", winsound.SND_FILENAME)
-        self.__color = color
         if len(self.__pawns) == 0:
             self.__pawns.append(Pawn(self.__x * 50 + 45, self.__y * 50 + 45, color, self.__tk, self.__canvas))
             return
@@ -51,13 +49,10 @@ class Cell:
         for pawn in self.__pawns:
             pawn.deleteFromCanvas()
         self.__pawns = []
-        self.__color = None
 
     def removePawn(self):
         pawn = self.__pawns.pop()
         pawn.deleteFromCanvas()
-        if len(self.__pawns) == 0:
-            self.__color = None
 
     def getX(self):
         return self.__x
@@ -69,4 +64,6 @@ class Cell:
         return self.__x, self.__y
 
     def getColor(self):
-        return self.__color
+        if len(self.__pawns) == 0:
+            return None
+        return self.__pawns[0].getColor()
